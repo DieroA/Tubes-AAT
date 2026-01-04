@@ -42,7 +42,7 @@ export default function ReportPage() {
     title: "",
     description: "",
     category: "",
-    isAnonymous: true,
+    isAnonymous: false,
     location: "",
   });
 
@@ -93,7 +93,7 @@ export default function ReportPage() {
       title: "",
       description: "",
       category: "",
-      isAnonymous: true,
+      isAnonymous: false,
       location: "",
     });
   };
