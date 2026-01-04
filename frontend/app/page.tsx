@@ -60,8 +60,7 @@ export default function ReportPage() {
     fileInputRef.current?.click();
   };
 
-  const removeFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const removeFile = () => {
     setFile(null);
     setPreview(null);
     if (fileInputRef.current) {
@@ -73,18 +72,37 @@ export default function ReportPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Simulasi latensi Network/Kafka
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
     const finalPayload = {
       ...formData,
       attachment: file ? file.name : "No attachment",
       fileSize: file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "0 MB",
     };
 
-    console.log("Payload Event ke Kafka:", finalPayload);
-    setLoading(false);
-    setSuccess(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/reports`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(finalPayload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const result = await response.json();
+      console.log("Backend Response:", result);
+      setSuccess(true);
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      alert("Failed to submit report. Check console.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -96,6 +114,7 @@ export default function ReportPage() {
       isAnonymous: false,
       location: "",
     });
+    removeFile();
   };
 
   if (success) {
@@ -116,7 +135,7 @@ export default function ReportPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={resetForm} className="w-full">
+            <Button onClick={resetForm} className="w-full cursor-pointer">
               Buat Laporan Baru
             </Button>
           </CardFooter>
@@ -282,7 +301,10 @@ export default function ReportPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 cursor-pointer"
-                        onClick={removeFile}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          removeFile();
+                        }}
                       >
                         <X className="h-4 w-4 mr-1" /> Hapus
                       </Button>
